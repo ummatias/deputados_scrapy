@@ -7,7 +7,7 @@ from scrapy.selector import Selector
 class DeputSpider(scrapy.Spider):
     name = "DeputSpider"
 
-    def parse(self, response):
+    def parse(self, response, gender="female"):
         info = self._format_info(response.css("ul.informacoes-deputado li").getall())
         presencas = self._format_presenca(
             response.css("dl.list-table__definition-list").getall()
@@ -21,6 +21,7 @@ class DeputSpider(scrapy.Spider):
 
         out_dict = {}
         out_dict["nome"] = info["nome_civil"]
+        out_dict["genero"] = response.meta.get("gender")
         out_dict.update(presencas[0])
         out_dict.update(presencas[1])
         out_dict["data_nascimento"] = info["data_de_nascimento"]
@@ -33,7 +34,9 @@ class DeputSpider(scrapy.Spider):
     def start_requests(self):
         urls = self._load_urls("../../data/")
         for url in urls:
-            yield scrapy.Request(url=url, callback=self.parse)
+            yield scrapy.Request(
+                url=url[0], callback=self.parse, meta={"gender": f"{url[1]}"}
+            )
 
     def _load_urls(self, path):
         urls = []
@@ -41,7 +44,10 @@ class DeputSpider(scrapy.Spider):
             with open(os.path.join(path, file_path), "r") as f:
                 lines = f.readlines()
                 for line in lines:
-                    urls.append(line.strip())
+                    if file_path.split(".")[0].endswith("as"):
+                        urls.append((line.strip(), "female"))
+                    else:
+                        urls.append((line.strip(), "male"))
         return urls
 
     def _format_presenca(self, dl):
