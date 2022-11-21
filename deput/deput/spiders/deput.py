@@ -32,7 +32,7 @@ class DeputSpider(scrapy.Spider):
         yield out_dict
 
     def start_requests(self):
-        urls = self._load_urls("../../data/")
+        urls = self._load_urls("/home/matias/cdd/deputados_scrapy/deput/data")
         for url in urls:
             yield scrapy.Request(
                 url=url[0], callback=self.parse, meta={"gender": f"{url[1]}"}
@@ -44,6 +44,8 @@ class DeputSpider(scrapy.Spider):
             with open(os.path.join(path, file_path), "r") as f:
                 lines = f.readlines()
                 for line in lines:
+                    line = line.replace("\n", "").replace(",", "").replace('"', "")
+
                     if file_path.split(".")[0].endswith("as"):
                         urls.append((line.strip(), "female"))
                     else:
